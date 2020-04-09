@@ -1,18 +1,17 @@
 {
-  "name": "pandiff",
-  "version": "0.5.0",
+  "name": "pandiff-docker",
+  "version": "0.6.0",
   "description": "Prose diffs for any document format supported by Pandoc",
   "main": "index.js",
   "bin": "cli.js",
   "scripts": {
-    "publish-please": "publish-please",
     "test": "standard && mocha"
   },
-  "author": "David A Roberts",
+  "author": "Marvin SANT",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/davidar/pandiff.git"
+    "url": "git+https://github.com/devteck-io/pandiff.git"
   },
   "devDependencies": {
     "chai": "^4.2.0",
@@ -21,11 +20,13 @@
   },
   "dependencies": {
     "command-line-args": "^5.1.1",
-    "diff": "^3.5.0",
+    "diff": "^4.0.2",
+    "duplexer": "^0.1.1",
     "github-markdown-css": "^4.0.0",
-    "jsdom": "^11.12.0",
+    "jsdom": "^16.2.2",
     "node-htmldiff": "^0.9.3",
-    "nodejs-sh": "^0.1.0",
+    "nodejs-sh": "^0.2.0",
+    "raw-body": "^2.4.1",
     "wordwrap": "^1.0.0"
   }
 }

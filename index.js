@@ -1,8 +1,6 @@
 const { diffLines } = require('diff')
 const htmldiff = require('node-htmldiff')
 const { JSDOM } = require('jsdom')
-// const { pandoc, docker } = require('nodejs-sh')
-const exec = require('child_process').exec;
 const path = require('path')
 const wordwrap = require('wordwrap')
 
