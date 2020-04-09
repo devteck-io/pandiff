@@ -2,7 +2,7 @@ dist: trusty
 sudo: required
 language: node_js
 node_js:
-- node
+  - node
 before_install:
-- wget https://github.com/jgm/pandoc/releases/download/2.7.3/pandoc-2.7.3-1-amd64.deb
-- sudo dpkg -i pandoc-*.deb
+  - wget https://github.com/jgm/pandoc/releases/download/2.9.2.1/pandoc-2.9.2.1-1-amd64.deb
+  - sudo dpkg -i pandoc-*.deb

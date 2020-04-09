@@ -1,15 +1,39 @@
-const {diffLines} = require('diff')
+const { diffLines } = require('diff')
 const htmldiff = require('node-htmldiff')
-const {JSDOM} = require('jsdom')
-const {pandoc} = require('nodejs-sh')
+const { JSDOM } = require('jsdom')
+// const { pandoc, docker } = require('nodejs-sh')
+const exec = require('child_process').exec;
 const path = require('path')
 const wordwrap = require('wordwrap')
+
+const duplex = require('duplexer')
+const getRawBody = require('raw-body')
+const { spawn } = require('child_process')
+
+const dockerSh = function (...args) {
+  let proc = spawn('./docker.sh', args, { stdio: ['pipe', 'pipe', process.stderr] })
+  let stream = duplex(proc.stdin, proc.stdout)
+  stream.end = function () {
+    proc.stdin.end.apply(proc.stdin, arguments)
+    return this // return duplex stream rather than original writer stream
+  }
+  stream.then = function (resolve, reject) {
+    proc.on('close', code => (code === 0) ? resolve() : reject(code))
+  }
+  stream.toString = async function (encoding = 'utf-8') {
+    let promise = getRawBody(this, { encoding })
+    await this
+    return promise
+  }
+  return stream
+}
+
 
 const forEachR = (a, f) => { for (let i = a.length - 1; i >= 0; i--) f(a[i]) }
 const removeNode = node => node.parentNode.removeChild(node)
 const removeNodes = nodes => forEachR(nodes, removeNode)
 
-function diffu (text1, text2) {
+function diffu(text1, text2) {
   let result = []
   diffLines(text1, text2).forEach(part => {
     let prefix = ' '
@@ -22,7 +46,7 @@ function diffu (text1, text2) {
   return result.join('\n')
 }
 
-function postprocess (html) {
+function postprocess(html) {
   let dom = new JSDOM(html)
   let document = dom.window.document
 
@@ -131,7 +155,7 @@ function postprocess (html) {
   return dom.serialize()
 }
 
-function buildArgs (opts, ...params) {
+function buildArgs(opts, ...params) {
   let args = []
   for (const param of params) {
     if (param in opts) {
@@ -149,25 +173,28 @@ function buildArgs (opts, ...params) {
   return args
 }
 
-async function convert (source, opts = {}) {
+async function convert(source, opts = {}) {
   let args = buildArgs(opts, 'bibliography', 'extract-media', 'filter', 'from', 'lua-filter', 'resource-path')
   args.push('--html-q-tags', '--mathjax')
   let html
+
   if (opts.files) {
-    html = await pandoc(...args, source).toString()
+    // html = await docker(...args, source);
+    html = await dockerSh(...args, source).toString()
   } else {
-    html = await pandoc(...args).end(source).toString()
+    html = await dockerSh(...args).end(source).toString()
   }
   html = html.replace(/\\[()[\]]/g, '')
-  if ('extract-media' in opts) html = await pandoc(...args, '--from=html').end(html).toString()
+  if ('extract-media' in opts) {
+    html = await dockerSh(...args, '--from=html').end(html).toString()
+  }
   return html
 }
 
-async function pandiff (source1, source2, opts = {}) {
+async function pandiff(source1, source2, opts = {}) {
   let html1 = await convert(source1, opts)
   let html2 = await convert(source2, opts)
   let html = htmldiff(html1, html2)
-
   let unmodified = html.replace(/<del.*?del>/g, '').replace(/<ins.*?ins>/g, '')
   let similarity = unmodified.length / html.length
   if (opts.threshold && similarity < opts.threshold) {
@@ -210,15 +237,16 @@ const regex = {
   }
 }
 
-async function render (html, opts = {}) {
+async function render(html, opts = {}) {
   html = postprocess(html)
 
   let args = buildArgs(opts, 'atx-headers', 'reference-links')
   args.push('--wrap=none')
   if (opts.output || opts.to) args.push('--atx-headers')
 
-  let output = await pandoc('-f', 'html+tex_math_single_backslash', '-t', markdown).end(html).toString()
-  output = await pandoc(...args, '-t', markdown).end(output).toString()
+  let output = await dockerSh('-f', 'html+tex_math_single_backslash', '-t', markdown).end(html).toString()
+  output = await dockerSh(...args, '-t', markdown).end(output).toString()
+
   output = output
     .replace(regex.span.sub, '{~~$1~>$2~~}')
     .replace(regex.span.del, '{--$1--}')
@@ -226,7 +254,7 @@ async function render (html, opts = {}) {
     .replace(regex.div.del, '{--$1--}')
     .replace(regex.div.ins, '{++$1++}')
 
-  let {wrap = 72} = opts
+  let { wrap = 72 } = opts
   let lines = []
   let pre = false
   for (const line of output.split('\n')) {
@@ -273,14 +301,14 @@ const criticAccept = text => text
   .replace(regex.critic.sub, '$2')
 
 const pandocOptionsHTML = [
-  '--css', require.resolve('github-markdown-css'),
-  '--css', path.join(__dirname, 'pandiff.css'),
+  '--css', path.join('/data/', 'node_modules/github-markdown-css/github-markdown.css'),
+  '--css', path.join('/data/', 'pandiff.css'),
   '--variable', 'include-before=<article class="markdown-body">',
   '--variable', 'include-after=</article>',
-  '--self-contained'
+  // '--self-contained'
 ]
 
-async function postrender (text, opts = {}) {
+async function postrender(text, opts = {}) {
   if (!opts.output && !opts.to) return text
 
   if (!('highlight-style' in opts)) opts['highlight-style'] = 'kate'
@@ -302,15 +330,15 @@ async function postrender (text, opts = {}) {
   }
 
   if (opts.output) {
-    await pandoc(...args).end(text)
+    await dockerSh(...args).end(text)
     return null
   } else {
-    return pandoc(...args).end(text).toString()
+    return dockerSh(...args).end(text).toString()
   }
 }
 
 module.exports = pandiff
 module.exports.trackChanges = (file, opts = {}) =>
-  pandoc(file, '--track-changes=all').toString().then(html => render(html, opts))
+  dockerSh(file, '--track-changes=all').toString().then(html => render(html, opts))
 module.exports.normalise = (text, opts = {}) =>
   pandiff(criticReject(text), criticAccept(text), opts)
