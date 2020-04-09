@@ -1,6 +1,6 @@
 {
   "name": "pandiff-docker",
-  "version": "0.6.0",
+  "version": "0.7.1",
   "description": "Prose diffs for any document format supported by Pandoc",
   "main": "index.js",
   "bin": "cli.js",

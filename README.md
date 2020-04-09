@@ -1,4 +1,8 @@
-# PanDiff
+# PanDiff Docker
+
+## Docker
+
+This version use `` docker run -a stdin -a stdout -i --rm --volume "`pwd`:/data" --user `id -u`:`id -g` pandoc/latex:2.6 "$@" `` to run all commands.
 
 ## Features
 
@@ -12,21 +16,20 @@
 
 ## Installation
 
-First install [Pandoc](https://pandoc.org/installing.html) and [npm](https://www.npmjs.com/get-npm), then run:
+First install docker in your server, then run:
 
 ```sh
-npm install -g pandiff
+npm install -g pandiff-docker
 ```
 
 ## Usage
 
 ```sh
-pandiff test/old.md test/new.md
+pandiff-docker test/old.md test/new.md
 ```
 
 ````markdown
-{~~Old~>New~~} Title
-====================
+# {~~Old~>New~~} Title
 
 {--![image](minus.png)--}
 
@@ -34,12 +37,12 @@ pandiff test/old.md test/new.md
 
 1.  Lorem ipsum dolor {++sit ++}amet
 2.  {++[consectetur adipiscing
-elit](https://en.wikipedia.org/wiki/Lorem_ipsum)++}
+    elit](https://en.wikipedia.org/wiki/Lorem_ipsum)++}
 3.  Lorem{-- ipsum--} dolor sit amet
 
-I really love *italic {~~fonts~>font-styles~~}* {~~here.~>there.~~}
+I really love _italic {~~fonts~>font-styles~~}_ {~~here.~>there.~~}
 
-``` diff
+```diff
  print("Hello")
 -print("world.")
 +print("world!")
@@ -56,11 +59,11 @@ because Fiction is obliged to stick to possibilities; Truth isn’t.
 ### Options
 
 ```sh
-pandiff --help
+pandiff-docker --help
 ```
 
 ```
-Usage: pandiff [OPTIONS] FILE1 FILE2
+Usage: pandiff-docker [OPTIONS] FILE1 FILE2
       --atx-headers
       --bibliography=FILE
       --columns=NUMBER
@@ -85,36 +88,36 @@ Usage: pandiff [OPTIONS] FILE1 FILE2
 Configure git by running the following commands:
 
 ```sh
-git config --global difftool.pandiff.cmd 'pandiff "$LOCAL" "$REMOTE"'
-git config --global alias.pandiff 'difftool -t pandiff -y'
+git config --global difftool.pandiff-docker.cmd 'pandiff-docker "$LOCAL" "$REMOTE"'
+git config --global alias.pandiff-docker 'difftool -t pandiff-docker -y'
 ```
 
-Now you can use `git pandiff` wherever you would usually use `git diff`.
+Now you can use `git pandiff-docker` wherever you would usually use `git diff`.
 
 ### HTML output
 
 ```sh
-pandiff old.md new.md -s -o diff.html
+pandiff-docker old.md new.md -s -o diff.html
 ```
 
-[![](test/diff.html.png)](https://rawgit.com/davidar/pandiff/master/test/diff.html)
+[![](test/diff.html.png)](https://rawgit.com/davidar/pandiff-docker/master/test/diff.html)
 
 ### PDF output
 
 ```sh
-pandiff old.md new.md -o diff.pdf
+pandiff-docker old.md new.md -o diff.pdf
 ```
 
-[![](test/diff.pdf.png)](https://rawgit.com/davidar/pandiff/master/test/diff.pdf)
+[![](test/diff.pdf.png)](https://rawgit.com/davidar/pandiff-docker/master/test/diff.pdf)
 
 ### Word Track Changes
 
 ```sh
-pandiff old.md new.md -o diff.docx
+pandiff-docker old.md new.md -o diff.docx
 ```
 
 ```sh
-pandiff test/track_changes_move.docx
+pandiff-docker test/track_changes_move.docx
 ```
 
 ```markdown
